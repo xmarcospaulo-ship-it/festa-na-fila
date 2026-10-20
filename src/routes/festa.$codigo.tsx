@@ -5,7 +5,7 @@ import { DEMO_NOW_PLAYING, DEMO_PARTY, DEMO_QUEUE, ENDED_CODE, searchDemoTracks 
 import type { QueueItem, Track } from "@/lib/types";
 
 export const Route = createFileRoute("/festa/$codigo")({
-  validateSearch: (s: Record<string, unknown>) => ({ apelido: typeof s.apelido === "string" ? s.apelido : "Convidado" }),
+  validateSearch: (s: Record<string, unknown>) => ({ apelido: typeof s["apelido"] === "string" ? s["apelido"] : "Convidado" }),
   head: ({ params }) => ({
     meta: [
       { title: `Festa ${params.codigo} — Festa na Fila` },

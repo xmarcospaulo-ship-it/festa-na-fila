@@ -25,12 +25,12 @@ export const DEMO_CATALOG: Track[] = [
 ];
 
 export const DEMO_QUEUE: QueueItem[] = [
-  { ...DEMO_CATALOG[1], queueId: "q1", requestedBy: "Ana" },
-  { ...DEMO_CATALOG[2], queueId: "q2", requestedBy: "Pedro" },
-  { ...DEMO_CATALOG[3], queueId: "q3", requestedBy: "Lu" },
+  { ...DEMO_CATALOG[1]!, queueId: "q1", requestedBy: "Ana" },
+  { ...DEMO_CATALOG[2]!, queueId: "q2", requestedBy: "Pedro" },
+  { ...DEMO_CATALOG[3]!, queueId: "q3", requestedBy: "Lu" },
 ];
 
-export const DEMO_NOW_PLAYING: QueueItem = { ...DEMO_CATALOG[0], queueId: "q0", requestedBy: "Ju" };
+export const DEMO_NOW_PLAYING: QueueItem = { ...DEMO_CATALOG[0]!, queueId: "q0", requestedBy: "Ju" };
 
 /** Busca fictícia local. Futuro: substituir por chamada server-side à YouTube Data API. */
 export function searchDemoTracks(query: string): Track[] {

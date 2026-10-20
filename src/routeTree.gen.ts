@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnfitriaoRouteImport } from './routes/anfitriao'
+import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as FestaCodigoRouteImport } from './routes/festa.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnfitriaoRoute = AnfitriaoRouteImport.update({
+  id: '/anfitriao',
+  path: '/anfitriao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FestaCodigoRoute = FestaCodigoRouteImport.update({
+  id: '/festa/$codigo',
+  path: '/festa/$codigo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/anfitriao': typeof AnfitriaoRoute
+  '/entrar': typeof EntrarRoute
+  '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/anfitriao': typeof AnfitriaoRoute
+  '/entrar': typeof EntrarRoute
+  '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/anfitriao': typeof AnfitriaoRoute
+  '/entrar': typeof EntrarRoute
+  '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
+  id: '__root__' | '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnfitriaoRoute: typeof AnfitriaoRoute
+  EntrarRoute: typeof EntrarRoute
+  FestaCodigoRoute: typeof FestaCodigoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/anfitriao': {
+      id: '/anfitriao'
+      path: '/anfitriao'
+      fullPath: '/anfitriao'
+      preLoaderRoute: typeof AnfitriaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/festa/$codigo': {
+      id: '/festa/$codigo'
+      path: '/festa/$codigo'
+      fullPath: '/festa/$codigo'
+      preLoaderRoute: typeof FestaCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnfitriaoRoute: AnfitriaoRoute,
+  EntrarRoute: EntrarRoute,
+  FestaCodigoRoute: FestaCodigoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

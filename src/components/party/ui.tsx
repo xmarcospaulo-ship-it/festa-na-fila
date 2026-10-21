@@ -48,7 +48,7 @@ export function Header({ right }: { right?: ReactNode }) {
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cn("rounded-3xl border border-border bg-card/80 p-5 backdrop-blur", className)}>{children}</section>;
+  return <section className={cn("min-w-0 rounded-3xl border border-border bg-card/80 p-5 backdrop-blur", className)}>{children}</section>;
 }
 
 /** Miniatura fictícia (gradiente). Futuro: <img src={thumbnail do YouTube} />. */

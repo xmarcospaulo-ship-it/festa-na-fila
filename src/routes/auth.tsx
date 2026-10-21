@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect,useState } from 'react';
 import { BigButton,Card,Header } from '@/components/party/ui';
 import { lovable } from '@/integrations/lovable';
 import { supabase } from '@/integrations/supabase/client';
 import { hostAccess } from '@/lib/party-data';
 export const Route=createFileRoute('/auth')({head:()=>({meta:[{title:'Acesso do anfitrião — Festa na Fila'},{name:'description',content:'Acesso privado do anfitrião autorizado.'},{property:'og:title',content:'Acesso do anfitrião — Festa na Fila'},{property:'og:description',content:'Acesso privado para administrar festas.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:Auth});
 function Auth(){const navigate=useNavigate(); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
+useEffect(()=>{let active=true;hostAccess().then(allowed=>{if(active && allowed) navigate({to:'/admin',replace:true});});return()=>{active=false;};},[navigate]);
 async function login(provider:'google'|'lovable'){setBusy(true);setError('');try{const result=await lovable.auth.signInWithOAuth(provider,{redirect_uri:`${window.location.origin}/auth`});if(result.error) throw result.error;if(result.redirected) return;if(await hostAccess()) await navigate({to:'/admin'});else setError('Esta conta não tem acesso à área do anfitrião.');}catch{setError('Não foi possível entrar. Tente novamente.');}finally{setBusy(false);}}
 return <div className="min-h-screen"><Header/><main className="mx-auto max-w-md px-4 pt-8"><Card><h1 className="text-3xl font-bold">Área do anfitrião</h1><div className="mt-6 space-y-3"><BigButton className="w-full" disabled={busy} onClick={()=>login('google')}>Entrar com Google</BigButton><BigButton className="w-full" variant="ghost" disabled={busy} onClick={()=>login('lovable')}>Entrar com Lovable</BigButton><BigButton className="w-full" variant="accent" disabled={busy} onClick={async()=>{if(await hostAccess()) navigate({to:'/admin'});else {const {data}=await supabase.auth.getUser();setError(data.user?'Esta conta não tem acesso à área do anfitrião.':'Entre com sua conta para continuar.');}}}>Continuar</BigButton>{error && <p role="alert" className="text-destructive">{error}</p>}</div></Card></main></div>}

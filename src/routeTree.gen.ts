@@ -10,8 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AnfitriaoRouteImport } from './routes/anfitriao'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as FestaCodigoRouteImport } from './routes/festa.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
@@ -19,15 +22,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnfitriaoRoute = AnfitriaoRouteImport.update({
   id: '/anfitriao',
   path: '/anfitriao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const FestaCodigoRoute = FestaCodigoRouteImport.update({
   id: '/festa/$codigo',
@@ -38,33 +55,51 @@ const FestaCodigoRoute = FestaCodigoRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anfitriao': typeof AnfitriaoRoute
+  '/auth': typeof AuthRoute
   '/entrar': typeof EntrarRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anfitriao': typeof AnfitriaoRoute
+  '/auth': typeof AuthRoute
   '/entrar': typeof EntrarRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/anfitriao': typeof AnfitriaoRoute
+  '/auth': typeof AuthRoute
   '/entrar': typeof EntrarRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/festa/$codigo': typeof FestaCodigoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
+  fullPaths:
+    '/' | '/anfitriao' | '/auth' | '/entrar' | '/admin' | '/festa/$codigo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
-  id: '__root__' | '/' | '/anfitriao' | '/entrar' | '/festa/$codigo'
+  to: '/' | '/anfitriao' | '/auth' | '/entrar' | '/admin' | '/festa/$codigo'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/anfitriao'
+    | '/auth'
+    | '/entrar'
+    | '/_authenticated/admin'
+    | '/festa/$codigo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AnfitriaoRoute: typeof AnfitriaoRoute
+  AuthRoute: typeof AuthRoute
   EntrarRoute: typeof EntrarRoute
   FestaCodigoRoute: typeof FestaCodigoRoute
 }
@@ -78,11 +113,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/anfitriao': {
       id: '/anfitriao'
       path: '/anfitriao'
       fullPath: '/anfitriao'
       preLoaderRoute: typeof AnfitriaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrar': {
@@ -91,6 +140,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/festa/$codigo': {
       id: '/festa/$codigo'
@@ -102,9 +158,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AnfitriaoRoute: AnfitriaoRoute,
+  AuthRoute: AuthRoute,
   EntrarRoute: EntrarRoute,
   FestaCodigoRoute: FestaCodigoRoute,
 }

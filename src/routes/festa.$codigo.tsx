@@ -1,104 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { BigButton, Card, DemoBadge, EndedState, Header, QueueList, Thumb } from "@/components/party/ui";
-import { DEMO_NOW_PLAYING, DEMO_PARTY, DEMO_QUEUE, ENDED_CODE, searchDemoTracks } from "@/lib/mock-data";
-import type { QueueItem, Track } from "@/lib/types";
-
-export const Route = createFileRoute("/festa/$codigo")({
-  validateSearch: (s: Record<string, unknown>) => ({ apelido: typeof s["apelido"] === "string" ? s["apelido"] : "Convidado" }),
-  head: ({ params }) => ({
-    meta: [
-      { title: `Festa ${params.codigo} — Festa na Fila` },
-      { name: "description", content: "Pesquise músicas e adicione à fila da festa." },
-      { property: "og:title", content: `Festa ${params.codigo} — Festa na Fila` },
-      { property: "og:description", content: "Peça sua música pelo celular." },
-    ],
-  }),
-  component: Guest,
-});
-
-function Guest() {
-  const { codigo } = Route.useParams();
-  const { apelido } = Route.useSearch();
-  const [query, setQuery] = useState("");
-  const [queue, setQueue] = useState<QueueItem[]>(DEMO_QUEUE);
-  const [added, setAdded] = useState<string | null>(null);
-  const results = useMemo(() => searchDemoTracks(query), [query]);
-
-  if (codigo === ENDED_CODE) {
-    return (
-      <div className="min-h-screen">
-        <Header />
-        <main className="px-4 pt-10"><EndedState /></main>
-      </div>
-    );
-  }
-
-  const add = (t: Track) => {
-    setQueue((q) => [...q, { ...t, queueId: `${t.id}-${Date.now()}`, requestedBy: apelido }]);
-    setAdded(t.title);
-    setTimeout(() => setAdded(null), 2500);
-  };
-
-  return (
-    <div className="min-h-screen">
-      <Header right={<span className="rounded-full bg-secondary px-3 py-1 text-sm">👤 {apelido}</span>} />
-      <main className="mx-auto grid max-w-5xl gap-4 px-4 pb-24 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4">
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Código {codigo}</p>
-                <h1 className="text-2xl font-bold">{DEMO_PARTY.name}</h1>
-              </div>
-              <DemoBadge />
-            </div>
-            <div className="mt-4 flex items-center gap-3 rounded-2xl bg-secondary/60 p-2">
-              <Thumb track={DEMO_NOW_PLAYING} />
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase text-accent">Tocando agora</p>
-                <p className="truncate font-semibold">{DEMO_NOW_PLAYING.title}</p>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">Só o anfitrião controla o player. Você pode pedir músicas à vontade!</p>
-          </Card>
-
-          <Card>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="🔎 Pesquisar música ou artista"
-              className="min-h-14 w-full rounded-2xl border border-input bg-secondary px-4 text-lg outline-none focus:ring-2 focus:ring-ring"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">Busca em catálogo fictício — a pesquisa no YouTube chega na próxima etapa.</p>
-            <ul className="mt-4 space-y-2">
-              {results.length === 0 && <li className="p-6 text-center text-muted-foreground">Nenhuma música encontrada.</li>}
-              {results.map((t) => (
-                <li key={t.id} className="flex items-center gap-3 rounded-2xl bg-secondary/60 p-2">
-                  <Thumb track={t} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{t.title}</p>
-                    <p className="truncate text-sm text-muted-foreground">{t.channel} · {t.duration}</p>
-                  </div>
-                  <BigButton variant="accent" className="min-h-12 px-4 text-sm" onClick={() => add(t)}>+ Adicionar à fila</BigButton>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
-
-        <Card className="h-fit">
-          <h2 className="mb-3 text-lg font-bold">Fila ({queue.length})</h2>
-          <QueueList items={queue} highlightName={apelido} />
-        </Card>
-      </main>
-
-      {added && (
-        <div role="status" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl bg-accent p-4 text-center font-semibold text-accent-foreground shadow-glow animate-in slide-in-from-bottom-4">
-          ✓ “{added}” adicionada à fila!
-        </div>
-      )}
-    </div>
-  );
-}
+import { createFileRoute,Link } from '@tanstack/react-router';
+import { useMemo,useState } from 'react';
+import { useSuspenseQuery,useQueryClient } from '@tanstack/react-query';
+import { BigButton,Card,DemoBadge,EndedState,Header,QueueList,Thumb } from '@/components/party/ui';
+import { searchDemoTracks } from '@/lib/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { partyOptions,queueItems,inputCls } from '@/lib/party-data';
+import { guestNickname } from '@/lib/party-rules';
+import type { Track } from '@/lib/types';
+export const Route=createFileRoute('/festa/$codigo')({validateSearch:(s:Record<string,unknown>)=>({apelido:guestNickname(typeof s['apelido']==='string'?s['apelido']:'')}),loader:({context,params})=>context.queryClient.ensureQueryData(partyOptions(params.codigo)),head:({params})=>({meta:[{title:`Festa ${params.codigo} — Festa na Fila`},{name:'description',content:'Entre na festa e acompanhe os pedidos.'},{property:'og:title',content:`Festa ${params.codigo} — Festa na Fila`},{property:'og:description',content:'Acompanhe a fila compartilhada da festa.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:Guest});
+function Guest(){const {codigo}=Route.useParams();const {apelido}=Route.useSearch();const {data:party}=useSuspenseQuery(partyOptions(codigo));const cache=useQueryClient();const [query,setQuery]=useState('');const [nick,setNick]=useState(apelido);const [error,setError]=useState('');const [added,setAdded]=useState('');const [busy,setBusy]=useState(false);const results=useMemo(()=>searchDemoTracks(query),[query]);
+async function add(track:Track){setBusy(true);setError('');setAdded('');try{const result=await supabase.rpc('add_party_request',{p_code:codigo,p_track:track,p_nickname:guestNickname(nick)});if(result.error) throw result.error;await cache.invalidateQueries({queryKey:['party',codigo]});setAdded(`“${track.title}” adicionada à fila!`);}catch{setError('Não foi possível adicionar. A festa pode ter sido encerrada.');await cache.invalidateQueries({queryKey:['party',codigo]});}finally{setBusy(false);}}
+if(!party) return <div className="min-h-screen"><Header/><main className="mx-auto max-w-md px-4 pt-8"><Card><h1 className="text-2xl font-bold">Festa não encontrada</h1><p className="mt-2 text-muted-foreground">Confira o código ou peça um novo link ao anfitrião.</p><Link to="/entrar" className="mt-5 block text-accent">Voltar à entrada</Link></Card></main></div>;
+if(party.status==='encerrada') return <div className="min-h-screen"><Header/><main className="px-4 pt-10"><EndedState/></main></div>;
+const current=queueItems(party,'current')[0];const queue=queueItems(party,'queued');
+return <div className="min-h-screen"><Header right={<span className="text-sm text-accent">{guestNickname(nick)}</span>}/><main className="mx-auto grid max-w-5xl gap-4 px-4 pb-24 lg:grid-cols-[1fr_360px]"><div className="min-w-0 space-y-4"><Card><p className="text-sm text-muted-foreground">Código {party.code}</p><h1 className="break-words text-2xl font-bold">{party.name}</h1>{current && <div className="mt-4 flex items-center gap-3 rounded-2xl bg-secondary/60 p-2"><Thumb track={current}/><div className="min-w-0"><p className="text-xs font-semibold text-accent">{party.playing?'Selecionada no player fictício':'Player fictício pausado'}</p><p className="truncate font-semibold">{current.title}</p></div></div>}<label className="mt-4 block"><span className="mb-1 block text-sm">Seu apelido (opcional)</span><input className={inputCls} maxLength={20} value={nick} onChange={e=>setNick(e.target.value)}/></label></Card><Card><DemoBadge>Catálogo fictício</DemoBadge><p className="my-3 text-xs text-muted-foreground">Pedidos são salvos na fila compartilhada. A busca e o áudio do YouTube ficam para a próxima etapa.</p><input aria-label="Pesquisar música ou artista" type="search" className={inputCls} placeholder="Pesquisar música ou artista" value={query} onChange={e=>setQuery(e.target.value)}/>{error && <p role="alert" className="mt-3 text-destructive">{error}</p>}{added && <p role="status" className="mt-3 text-accent">✓ {added}</p>}<ul className="mt-4 space-y-2">{!results.length && <li className="p-6 text-center text-muted-foreground">Nenhuma música encontrada.</li>}{results.map(track=><li key={track.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-secondary/60 p-2"><Thumb track={track}/><div className="min-w-0 flex-1 basis-32"><p className="truncate font-semibold">{track.title}</p><p className="truncate text-sm text-muted-foreground">{track.channel} · {track.duration}</p></div><BigButton variant="accent" className="min-h-12 px-4 text-sm" onClick={()=>add(track)} disabled={busy} aria-label={`Adicionar ${track.title}`}>+ Adicionar à fila</BigButton></li>)}</ul></Card></div><Card className="h-fit"><h2 className="mb-3 text-lg font-bold">Fila ({queue.length})</h2><QueueList items={queue} highlightName={guestNickname(nick)}/></Card></main></div>}

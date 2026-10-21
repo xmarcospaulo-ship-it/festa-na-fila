@@ -14,16 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      parties: {
+        Row: {
+          code: string
+          created_at: string
+          host_id: string
+          id: string
+          name: string
+          playing: boolean
+          status: string
+          volume: number
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          host_id: string
+          id?: string
+          name: string
+          playing?: boolean
+          status?: string
+          volume?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          host_id?: string
+          id?: string
+          name?: string
+          playing?: boolean
+          status?: string
+          volume?: number
+        }
+        Relationships: []
+      }
+      queue_entries: {
+        Row: {
+          created_at: string
+          id: string
+          party_id: string
+          position: number
+          requested_by: string
+          state: string
+          track: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          party_id: string
+          position?: never
+          requested_by?: string
+          state?: string
+          track: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          party_id?: string
+          position?: never
+          requested_by?: string
+          state?: string
+          track?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_entries_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_party_request: {
+        Args: { p_code: string; p_nickname: string; p_track: Json }
+        Returns: string
+      }
+      control_party: {
+        Args: {
+          p_action: string
+          p_entry?: string
+          p_id: string
+          p_value?: number
+        }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      party_snapshot: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +255,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+    },
   },
 } as const

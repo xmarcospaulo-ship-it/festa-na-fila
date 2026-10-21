@@ -8,6 +8,13 @@
       "when": 1792544727606,
       "tag": "0000_parties_host_roles_shared_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792544983081,
+      "tag": "0001_validate_guest_catalog_requests",
+      "breakpoints": true
     }
   ]
 }

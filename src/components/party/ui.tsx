@@ -42,7 +42,7 @@ export function Header({ right }: { right?: ReactNode }) {
       <Link to="/" className="font-display text-xl font-extrabold">
         <span className="text-party">Festa</span> na Fila
       </Link>
-      {right ?? <DemoBadge />}
+      {right}
     </header>
   );
 }

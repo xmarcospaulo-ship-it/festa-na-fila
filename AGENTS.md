@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep host privileges in protected user_roles, assigned only from verified Auth identity; never infer permissions from editable metadata.
+- Guest party snapshots and requests use narrowly granted RPCs; direct tables are host-only to avoid exposing all parties.
+- Serialize guest requests and host queue controls on the party row to preserve shared ordering and closed-party behavior.
+- Keep public guest routes separate from client-only authenticated administration, and use public server functions for SSR snapshots.

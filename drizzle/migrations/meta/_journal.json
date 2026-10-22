@@ -22,6 +22,20 @@
       "when": 1792620000000,
       "tag": "0002_youtube_player_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792630713496,
+      "tag": "0003_youtube_player_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792630757944,
+      "tag": "0004_restrict_player_rpc_grants",
+      "breakpoints": true
     }
   ]
 }

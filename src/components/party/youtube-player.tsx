@@ -16,7 +16,7 @@ function loadApi() {
   if (!apiPromise) apiPromise = new Promise<void>((resolve, reject) => {
     window.onYouTubeIframeAPIReady = resolve;
     let script = document.querySelector<HTMLScriptElement>('script[data-yt-api]');
-    if (!script) { script = document.createElement('script'); script.src = 'https://www.youtube.com/iframe_api'; script.dataset.ytApi = 'true'; script.onerror = () => reject(new Error('YouTube API indisponível')); document.head.appendChild(script); }
+    if (!script) { script = document.createElement('script'); script.src = 'https://www.youtube.com/iframe_api'; script.dataset['ytApi'] = 'true'; script.onerror = () => reject(new Error('YouTube API indisponível')); document.head.appendChild(script); }
   }).catch(e => { apiPromise = undefined; throw e; });
   return apiPromise;
 }
@@ -24,7 +24,7 @@ const validId = (id?: string): id is string => !!id && /^[A-Za-z0-9_-]{11}$/.tes
 const targetPosition = (position: number, updated: string | null, playing: boolean) =>
   Math.max(0, position + (playing && updated ? Math.max(0, (Date.now() - Date.parse(updated)) / 1000) : 0));
 
-type Props = { partyId: string; track?: Track; playing: boolean; volume: number; positionSeconds: number; positionUpdatedAt: string | null; isHost: boolean; canSkip?: boolean; disabled?: boolean; onToggle: () => void; onSkip: () => void; onVolumeChange: (n: number) => void; onPositionChange: (id: string, seconds: number) => void };
+type Props = { partyId: string; track?: Track | undefined; playing: boolean; volume: number; positionSeconds: number; positionUpdatedAt: string | null; isHost: boolean; canSkip?: boolean; disabled?: boolean; onToggle: () => void; onSkip: () => void; onVolumeChange: (n: number) => void; onPositionChange: (id: string, seconds: number) => void };
 export function YouTubePartyPlayer({ partyId, track, playing, volume, positionSeconds, positionUpdatedAt, isHost, canSkip = false, disabled = false, onToggle, onSkip, onVolumeChange, onPositionChange }: Props) {
   const mount = useRef<HTMLDivElement>(null), player = useRef<Player | null>(null), loadedId = useRef('');
   const host = useRef(isHost), skipRef = useRef(onSkip), syncRef = useRef(onPositionChange);

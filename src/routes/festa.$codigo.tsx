@@ -39,11 +39,13 @@ function Guest() {
     if (result.error) throw result.error;
     return result.data;
   }, staleTime: 30_000 });
-  const current = queueItems(party, 'current')[0], queue = queueItems(party, 'queued'), isHost = host.data === true;
+  const current = party ? queueItems(party, 'current')[0] : undefined;
+  const queue = party ? queueItems(party, 'queued') : [];
+  const isHost = host.data === true;
   const searchError = results.error instanceof Error ? results.error.message : '';
 
   async function control(action: string, value?: number) {
-    if (!isHost) return;
+    if (!party || !isHost) return;
     setBusy(true); setError('');
     try {
       const result = await supabase.rpc('control_party', { p_id: party.id, p_action: action, ...(value === undefined ? {} : { p_value: value }) });
@@ -53,7 +55,7 @@ function Guest() {
     finally { setBusy(false); }
   }
   async function syncPosition(videoId: string, seconds: number) {
-    if (!isHost) return;
+    if (!party || !isHost) return;
     const result = await supabase.rpc('sync_party_player', { p_id: party.id, p_video_id: videoId, p_position_seconds: seconds });
     if (result.error) console.error('Falha ao sincronizar o player:', result.error.message);
   }

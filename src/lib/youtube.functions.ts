@@ -6,7 +6,7 @@ type VideoItem = { id: string; contentDetails?: { duration?: string }; status?: 
 type YouTubeApiError = { error?: { message?: string; errors?: Array<{ reason?: string }> } };
 
 function durationLabel(value: string) {
-  const m = value.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);
+  const m = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!m) return '—';
   const minutes = Number(m[2] || 0) + Number(m[1] || 0) * 60;
   return `${minutes}:${String(Number(m[3] || 0)).padStart(2, '0')}`;

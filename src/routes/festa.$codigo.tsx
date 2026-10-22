@@ -28,6 +28,7 @@ function Guest() {
   const { data: party } = useSuspenseQuery(partyOptions(codigo));
   const cache = useQueryClient();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [nick, setNick] = useState(apelido);
   const [error, setError] = useState('');
   const [added, setAdded] = useState('');
@@ -44,7 +45,13 @@ function Guest() {
     try { window.localStorage.setItem('festa:' + codigo + ':allow-repeats', String(allowRepeats)); } catch { /* storage may be unavailable */ }
   }, [codigo, allowRepeats]);
   const term = query.trim();
-  const results = useQuery({ queryKey: ['youtube-search', term], queryFn: () => searchYouTubeTracks({ data: { query: term } }), enabled: term.length >= 2, staleTime: 30_000 });
+  // Espera o usuário parar de digitar para não disparar uma busca por caractere.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(query.trim()), 450);
+    return () => clearTimeout(timeout);
+  }, [query]);
+  const searchTerm = debouncedQuery;
+  const results = useQuery({ queryKey: ['youtube-search', searchTerm], queryFn: () => searchYouTubeTracks({ data: { query: searchTerm } }), enabled: searchTerm.length >= 2, staleTime: 60_000, retry: 1, refetchOnWindowFocus: false });
   const host = useQuery({ queryKey: ['party-host', codigo], queryFn: async () => {
     const result = await supabase.rpc('is_party_host', { p_code: codigo });
     if (result.error) throw result.error;

@@ -78,7 +78,7 @@ function Guest() {
         <Card><p className="text-sm text-muted-foreground">Código {party.code}</p><h1 className="break-words text-2xl font-bold">{party.name}</h1>
           <label className="mt-4 block"><span className="mb-1 block text-sm">Seu apelido (opcional)</span><input className={inputCls} maxLength={20} value={nick} onChange={e => setNick(e.target.value)} /></label>
         </Card>
-        <YouTubePartyPlayer partyId={party.id} track={current} playing={party.playing} volume={party.volume} positionSeconds={party.playbackPositionSeconds} positionUpdatedAt={party.playerUpdatedAt} isHost={isHost} disabled={busy || party.status !== 'ativa'}
+        <YouTubePartyPlayer partyId={party.id} track={current} playing={party.playing} volume={party.volume} positionSeconds={party.playbackPositionSeconds} positionUpdatedAt={party.playerUpdatedAt} isHost={isHost} canSkip={queue.length > 0} disabled={busy || party.status !== 'ativa'}
           onToggle={() => { void control('toggle'); }} onSkip={() => { void control('skip'); }} onVolumeChange={value => { void control('volume', value); }} onPositionChange={(id, seconds) => { void syncPosition(id, seconds); }} />
         <Card><h2 className="text-lg font-bold">Pedir uma música</h2><p className="my-2 text-xs text-muted-foreground">Pesquise vídeos públicos do YouTube que permitem reprodução incorporada.</p>
           <input aria-label="Pesquisar música ou artista" type="search" className={inputCls} placeholder="Pesquisar música ou artista" value={query} onChange={e => setQuery(e.target.value)} />

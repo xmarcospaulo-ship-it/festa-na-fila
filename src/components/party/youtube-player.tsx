@@ -24,8 +24,8 @@ const validId = (id?: string): id is string => !!id && /^[A-Za-z0-9_-]{11}$/.tes
 const targetPosition = (position: number, updated: string | null, playing: boolean) =>
   Math.max(0, position + (playing && updated ? Math.max(0, (Date.now() - Date.parse(updated)) / 1000) : 0));
 
-type Props = { partyId: string; track?: Track; playing: boolean; volume: number; positionSeconds: number; positionUpdatedAt: string | null; isHost: boolean; disabled?: boolean; onToggle: () => void; onSkip: () => void; onVolumeChange: (n: number) => void; onPositionChange: (id: string, seconds: number) => void };
-export function YouTubePartyPlayer({ partyId, track, playing, volume, positionSeconds, positionUpdatedAt, isHost, disabled = false, onToggle, onSkip, onVolumeChange, onPositionChange }: Props) {
+type Props = { partyId: string; track?: Track; playing: boolean; volume: number; positionSeconds: number; positionUpdatedAt: string | null; isHost: boolean; canSkip?: boolean; disabled?: boolean; onToggle: () => void; onSkip: () => void; onVolumeChange: (n: number) => void; onPositionChange: (id: string, seconds: number) => void };
+export function YouTubePartyPlayer({ partyId, track, playing, volume, positionSeconds, positionUpdatedAt, isHost, canSkip = false, disabled = false, onToggle, onSkip, onVolumeChange, onPositionChange }: Props) {
   const mount = useRef<HTMLDivElement>(null), player = useRef<Player | null>(null), loadedId = useRef('');
   const host = useRef(isHost), skipRef = useRef(onSkip), syncRef = useRef(onPositionChange);
   const [ready, setReady] = useState(false), [error, setError] = useState('');
@@ -72,7 +72,7 @@ export function YouTubePartyPlayer({ partyId, track, playing, volume, positionSe
     <div className="aspect-video overflow-hidden rounded-2xl bg-black"><div ref={mount} className="h-full w-full" /></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!videoId && <p className="text-sm text-muted-foreground">Adicione uma música do YouTube à fila para começar.</p>}
-    {isHost ? <div className="flex flex-wrap items-center gap-3"><BigButton disabled={disabled || !videoId} onClick={toggle}>{playing ? <Pause size={18}/> : <Play size={18}/>} {playing ? 'Pausar' : 'Tocar'}</BigButton><BigButton variant="ghost" disabled={disabled || !videoId} onClick={skip}><SkipForward size={18}/> Próxima</BigButton><label className="flex min-w-44 flex-1 items-center gap-2 text-sm"><Volume2 size={18}/><input aria-label="Volume do YouTube" className="min-w-0 flex-1 accent-[var(--accent)]" type="range" min={0} max={100} value={volume} disabled={disabled} onChange={e => onVolumeChange(Number(e.target.value))}/><span className="w-9 text-right tabular-nums">{volume}%</span></label></div> : <p className="text-xs text-muted-foreground">Somente o anfitrião controla reprodução, avanço e volume.</p>}
+    {isHost ? <div className="flex flex-wrap items-center gap-3"><BigButton disabled={disabled || !videoId} onClick={toggle}>{playing ? <Pause size={18}/> : <Play size={18}/>} {playing ? 'Pausar' : 'Tocar'}</BigButton><BigButton variant="ghost" disabled={disabled || (!videoId && !canSkip)} onClick={skip}><SkipForward size={18}/> Próxima</BigButton><label className="flex min-w-44 flex-1 items-center gap-2 text-sm"><Volume2 size={18}/><input aria-label="Volume do YouTube" className="min-w-0 flex-1 accent-[var(--accent)]" type="range" min={0} max={100} value={volume} disabled={disabled} onChange={e => onVolumeChange(Number(e.target.value))}/><span className="w-9 text-right tabular-nums">{volume}%</span></label></div> : <p className="text-xs text-muted-foreground">Somente o anfitrião controla reprodução, avanço e volume.</p>}
     {!ready && <p className="text-xs text-muted-foreground">Carregando player do YouTube…</p>}
   </Card>;
 }

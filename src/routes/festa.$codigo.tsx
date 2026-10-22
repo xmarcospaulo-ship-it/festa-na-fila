@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { BigButton, Card, EndedState, Header, QueueList, Thumb } from '@/components/party/ui';
 import { YouTubePartyPlayer } from '@/components/party/youtube-player';
@@ -32,6 +32,17 @@ function Guest() {
   const [error, setError] = useState('');
   const [added, setAdded] = useState('');
   const [busy, setBusy] = useState(false);
+  const [allowRepeats, setAllowRepeats] = useState(false);
+  const [autoMessage, setAutoMessage] = useState('');
+  const autoAttemptFor = useRef('');
+  const autoBusy = useRef(false);
+
+  useEffect(() => {
+    try { setAllowRepeats(window.localStorage.getItem('festa:' + codigo + ':allow-repeats') === 'true'); } catch { /* storage may be unavailable */ }
+  }, [codigo]);
+  useEffect(() => {
+    try { window.localStorage.setItem('festa:' + codigo + ':allow-repeats', String(allowRepeats)); } catch { /* storage may be unavailable */ }
+  }, [codigo, allowRepeats]);
   const term = query.trim();
   const results = useQuery({ queryKey: ['youtube-search', term], queryFn: () => searchYouTubeTracks({ data: { query: term } }), enabled: term.length >= 2, staleTime: 30_000 });
   const host = useQuery({ queryKey: ['party-host', codigo], queryFn: async () => {
@@ -59,6 +70,49 @@ function Guest() {
     const result = await supabase.rpc('sync_party_player', { p_id: party.id, p_video_id: videoId, p_position_seconds: seconds });
     if (result.error) console.error('Falha ao sincronizar o player:', result.error.message);
   }
+  async function playAutomaticNext() {
+    if (!party || !isHost || autoBusy.current || queue.length > 0 || !current || party.status !== 'ativa') return;
+    const currentId = current.videoId ?? current.id;
+    if (autoAttemptFor.current === currentId) return;
+    autoAttemptFor.current = currentId;
+    autoBusy.current = true;
+    setAutoMessage('Procurando a próxima música…');
+    try {
+      const artistQuery = current.channel ? current.channel + ' músicas populares' : current.title + ' músicas do mesmo gênero';
+      const similarQuery = (current.title + ' ' + current.channel + ' músicas semelhantes').trim();
+      const [genreResults, similarResults] = await Promise.all([
+        searchYouTubeTracks({ data: { query: artistQuery.slice(0, 100) } }),
+        searchYouTubeTracks({ data: { query: similarQuery.slice(0, 100) } }),
+      ]);
+      const recent: string[] = allowRepeats ? [] : (() => {
+        try { return JSON.parse(window.localStorage.getItem('festa:' + codigo + ':recent-tracks') ?? '[]') as string[]; } catch { return []; }
+      })();
+      const candidates = [
+        ...similarResults.filter(t => t.id !== currentId).sort(() => Math.random() - 0.5).slice(0, 4),
+        ...genreResults.filter(t => t.id !== currentId).sort(() => Math.random() - 0.5).slice(0, 6),
+      ].filter((t, index, all) => all.findIndex(other => other.id === t.id) === index && (allowRepeats || !recent.includes(t.id)));
+      if (!candidates.length) {
+        setAutoMessage(allowRepeats ? 'Não encontrei músicas automáticas agora.' : 'Não encontrei músicas novas. Você pode permitir repetições nas opções.');
+        return;
+      }
+      const chosen = candidates[Math.floor(Math.random() * Math.min(candidates.length, 6))] ?? candidates[0];
+      const result = await supabase.rpc('add_party_request', { p_code: codigo, p_track: chosen as unknown as import('@/integrations/supabase/types').Json, p_nickname: 'DJ automático' });
+      if (result.error) throw result.error;
+      await cache.invalidateQueries({ queryKey: ['party', codigo] });
+      const updatedRecent = [...new Set([chosen.id, ...recent])].slice(0, 30);
+      try { window.localStorage.setItem('festa:' + codigo + ':recent-tracks', JSON.stringify(updatedRecent)); } catch { /* storage may be unavailable */ }
+      setAutoMessage('Modo automático: ' + chosen.title);
+      await control('skip');
+    } catch {
+      setAutoMessage('Não foi possível montar a playlist automática. Confira a conexão e a API do YouTube.');
+    } finally { autoBusy.current = false; }
+  }
+
+  async function nextTrack() {
+    if (queue.length > 0) { await control('skip'); return; }
+    await playAutomaticNext();
+  }
+
   async function add(track: Track) {
     setBusy(true); setError(''); setAdded('');
     try {
@@ -81,7 +135,7 @@ function Guest() {
           <label className="mt-4 block"><span className="mb-1 block text-sm">Seu apelido (opcional)</span><input className={inputCls} maxLength={20} value={nick} onChange={e => setNick(e.target.value)} /></label>
         </Card>
         <YouTubePartyPlayer partyId={party.id} track={current} playing={party.playing} volume={party.volume} positionSeconds={party.playbackPositionSeconds} positionUpdatedAt={party.playerUpdatedAt} isHost={isHost} canSkip={queue.length > 0} disabled={busy || party.status !== 'ativa'}
-          onToggle={() => { void control('toggle'); }} onSkip={() => { void control('skip'); }} onVolumeChange={value => { void control('volume', value); }} onPositionChange={(id, seconds) => { void syncPosition(id, seconds); }} />
+          onToggle={() => { void control('toggle'); }} onSkip={() => { void nextTrack(); }} onVolumeChange={value => { void control('volume', value); }} onPositionChange={(id, seconds) => { void syncPosition(id, seconds); }} />
         <Card><h2 className="text-lg font-bold">Pedir uma música</h2><p className="my-2 text-xs text-muted-foreground">Pesquise vídeos públicos do YouTube que permitem reprodução incorporada.</p>
           <input aria-label="Pesquisar música ou artista" type="search" className={inputCls} placeholder="Pesquisar música ou artista" value={query} onChange={e => setQuery(e.target.value)} />
           {term.length === 1 && <p className="mt-3 text-sm text-muted-foreground">Digite mais um caractere para pesquisar.</p>}
@@ -96,7 +150,7 @@ function Guest() {
           </li>)}</ul>
         </Card>
       </div>
-      <Card className="h-fit"><h2 className="mb-3 text-lg font-bold">Fila ({queue.length})</h2><QueueList items={queue} highlightName={guestNickname(nick)} /></Card>
+      <Card className="h-fit"><h2 className="mb-3 text-lg font-bold">Fila ({queue.length})</h2><QueueList items={queue} highlightName={guestNickname(nick)} />{isHost && <div className="mt-4 border-t border-border pt-4"><label className="flex cursor-pointer items-start gap-3 text-sm"><input type="checkbox" className="mt-1 accent-[var(--accent)]" checked={allowRepeats} onChange={e => setAllowRepeats(e.target.checked)} /><span><span className="block font-semibold">Permitir músicas repetidas</span><span className="text-muted-foreground">Desativado: evita faixas tocadas recentemente. Ativado: pode repetir músicas.</span></span></label><p role="status" className="mt-3 text-xs text-muted-foreground">{autoMessage || "A playlist automática entra em ação quando a fila manual fica vazia."}</p></div>}</Card>
     </main>
   </div>;
 }

@@ -21,6 +21,8 @@ export type Database = {
           host_id: string
           id: string
           name: string
+          playback_position_seconds: number
+          player_updated_at: string
           playing: boolean
           status: string
           volume: number
@@ -31,6 +33,8 @@ export type Database = {
           host_id: string
           id?: string
           name: string
+          playback_position_seconds?: number
+          player_updated_at?: string
           playing?: boolean
           status?: string
           volume?: number
@@ -41,6 +45,8 @@ export type Database = {
           host_id?: string
           id?: string
           name?: string
+          playback_position_seconds?: number
+          player_updated_at?: string
           playing?: boolean
           status?: string
           volume?: number
@@ -125,7 +131,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_party_host: { Args: { p_code: string }; Returns: boolean }
       party_snapshot: { Args: { p_code: string }; Returns: Json }
+      sync_party_player: {
+        Args: { p_id: string; p_position_seconds: number; p_video_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin"

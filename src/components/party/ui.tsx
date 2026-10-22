@@ -54,18 +54,11 @@ export function Card({ className, children }: { className?: string; children: Re
 /** Miniatura fictícia (gradiente). Futuro: <img src={thumbnail do YouTube} />. */
 export function Thumb({ track, size = "md" }: { track: Track; size?: "md" | "lg" }) {
   return (
-    <div
-      aria-label="Miniatura fictícia"
-      className={cn(
-        "grid shrink-0 place-items-center rounded-xl text-xs font-bold text-foreground/80",
-        size === "lg" ? "aspect-video w-full text-sm" : "h-14 w-20",
-      )}
-      style={{
-        background: `linear-gradient(135deg, oklch(0.55 0.2 ${track.hue}), oklch(0.3 0.1 ${track.hue + 40}))`,
-      }}
-    >
-      DEMO
-    </div>
+    track.thumbnail ? (
+      <img src={track.thumbnail} alt={track.title} loading="lazy" className={cn("shrink-0 rounded-xl object-cover", size === "lg" ? "aspect-video w-full" : "h-14 w-20")} />
+    ) : (
+      <div aria-label="Miniatura fictícia" className={cn("grid shrink-0 place-items-center rounded-xl text-xs font-bold text-foreground/80", size === "lg" ? "aspect-video w-full text-sm" : "h-14 w-20")} style={{ background: `linear-gradient(135deg, oklch(0.55 0.2 ${track.hue}), oklch(0.3 0.1 ${track.hue + 40}))` }}>DEMO</div>
+    )
   );
 }
 

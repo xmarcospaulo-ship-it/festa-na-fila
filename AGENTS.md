@@ -13,3 +13,4 @@
 - Guest party snapshots and requests use narrowly granted RPCs; direct tables are host-only to avoid exposing all parties.
 - Serialize guest requests and host queue controls on the party row to preserve shared ordering and closed-party behavior.
 - Keep public guest routes separate from client-only authenticated administration, and use public server functions for SSR snapshots.
+- Revoke EXECUTE on SECURITY DEFINER RPCs from anon and PUBLIC explicitly; Supabase default privileges grant anon EXECUTE on newly created public functions, so revoking from PUBLIC alone leaves guests able to call host-only RPCs.

@@ -90,10 +90,17 @@ function Guest() {
     try {
       const artistQuery = current.channel ? current.channel + ' músicas populares' : current.title + ' músicas do mesmo gênero';
       const similarQuery = (current.title + ' ' + current.channel + ' músicas semelhantes').trim();
-      const [genreResults, similarResults] = await Promise.all([
+      // Uma busca pode falhar temporariamente sem impedir a outra de fornecer músicas.
+      const searches = await Promise.allSettled([
         searchYouTubeTracks({ data: { query: artistQuery.slice(0, 100) } }),
         searchYouTubeTracks({ data: { query: similarQuery.slice(0, 100) } }),
       ]);
+      const genreResults = searches[0].status === 'fulfilled' ? searches[0].value : [];
+      const similarResults = searches[1].status === 'fulfilled' ? searches[1].value : [];
+      if (searches.every(result => result.status === 'rejected')) {
+        const reason = searches[0].status === 'rejected' ? searches[0].reason : undefined;
+        throw reason instanceof Error ? reason : new Error('As duas pesquisas no YouTube falharam.');
+      }
       const recent: string[] = allowRepeats ? [] : (() => {
         try { return JSON.parse(window.localStorage.getItem('festa:' + codigo + ':recent-tracks') ?? '[]') as string[]; } catch { return []; }
       })();
@@ -119,8 +126,10 @@ function Guest() {
       try { window.localStorage.setItem('festa:' + codigo + ':recent-tracks', JSON.stringify(updatedRecent)); } catch { /* storage may be unavailable */ }
       setAutoMessage('Modo automático: ' + chosen.title);
       await control('skip');
-    } catch {
-      setAutoMessage('Não foi possível montar a playlist automática. Confira a conexão e a API do YouTube.');
+    } catch (cause) {
+      console.error('Falha ao montar a playlist automática:', cause);
+      const message = cause instanceof Error ? cause.message : '';
+      setAutoMessage(message || 'Não foi possível montar a playlist automática. Tente novamente em instantes.');
     } finally { autoBusy.current = false; }
   }
 

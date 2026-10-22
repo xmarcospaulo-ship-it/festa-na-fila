@@ -4,5 +4,7 @@
 - [x] Guest-only home and direct party entry.
 - [x] Private admin panel with real share links and QR codes implemented.
 - [x] Validate guest navigation, persistence, hidden tables and closed-party requests; document playback limitation.
-- [ ] Verify signed-in host creation, controls, sharing and QR scan end-to-end — blocked until the authorized host signs in at /auth (no auth users yet).
-- [ ] Re-check the mobile layout at 390x844 and drop the temporary TEST26 party once the host panel has been verified.
+- [x] Verify signed-in host panel end-to-end: parties listed, share link and QR rendered, volume change saved to the backend, host controls shown on the party page.
+- [x] Re-check the mobile layout at 390x844 — no sideways scrolling on any page.
+- [ ] Drop the temporary TEST26 party — waiting for the host's word.
+- [ ] Enable real song search for guests — needs a YouTube API key in the server secrets.

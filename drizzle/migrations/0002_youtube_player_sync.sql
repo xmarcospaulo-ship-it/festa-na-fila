@@ -27,7 +27,7 @@ BEGIN
   SELECT * INTO p FROM public.parties WHERE id=p_id FOR UPDATE;
   IF NOT FOUND OR p.host_id IS DISTINCT FROM auth.uid() OR NOT public.has_role(auth.uid(),'admin') THEN RAISE EXCEPTION 'Acesso não autorizado'; END IF;
   IF p.status<>'ativa' THEN RAISE EXCEPTION 'Festa encerrada'; END IF;
-  IF p_position_seconds IS NULL OR p_position_seconds<0 OR p_position_seconds>86400 OR p_video_id !~ '^[A-Za-z0-9_-]{11}$' THEN RAISE EXCEPTION 'Posição inválida'; END IF;
+  IF p_position_seconds IS NULL OR p_position_seconds<0 OR p_position_seconds>86400 OR p_video_id IS NULL OR p_video_id !~ '^[A-Za-z0-9_-]{11}$' THEN RAISE EXCEPTION 'Posição inválida'; END IF;
   SELECT q.track->>'id' INTO current_video_id FROM public.queue_entries q WHERE q.party_id=p_id AND q.state='current';
   IF current_video_id IS DISTINCT FROM p_video_id THEN RETURN; END IF;
   UPDATE public.parties SET playback_position_seconds=p_position_seconds,player_updated_at=now() WHERE id=p_id;
@@ -62,18 +62,15 @@ DECLARE p public.parties; result uuid; video_id text; title_text text; channel_t
 BEGIN
   SELECT * INTO p FROM public.parties WHERE code=upper(trim(p_code)) FOR UPDATE;
   IF NOT FOUND OR p.status<>'ativa' THEN RAISE EXCEPTION 'Festa indisponível ou encerrada'; END IF;
-  video_id:=COALESCE(p_track->>'videoId',p_track->>'id'); title_text:=trim(COALESCE(p_track->>'title',''));
-  channel_text:=trim(COALESCE(p_track->>'channel','')); duration_text:=trim(COALESCE(p_track->>'duration','')); thumbnail_text:=COALESCE(p_track->>'thumbnail','');
-  IF video_id !~ '^[A-Za-z0-9_-]{11}$' OR char_length(title_text) NOT BETWEEN 1 AND 120 OR char_length(channel_text) NOT BETWEEN 1 AND 120 OR char_length(duration_text)>12 THEN RAISE EXCEPTION 'Música inválida'; END IF;
+  video_id:=COALESCE(p_track->>'videoId',p_track->>'id');
+  title_text:=trim(COALESCE(p_track->>'title',''));
+  channel_text:=trim(COALESCE(p_track->>'channel',''));
+  duration_text:=trim(COALESCE(p_track->>'duration',''));
+  thumbnail_text:=COALESCE(p_track->>'thumbnail','');
+  IF video_id IS NULL OR video_id !~ '^[A-Za-z0-9_-]{11}$' OR char_length(title_text) NOT BETWEEN 1 AND 120 OR char_length(channel_text) NOT BETWEEN 1 AND 120 OR char_length(duration_text)>12 THEN RAISE EXCEPTION 'Música inválida'; END IF;
   canonical:=jsonb_build_object('id',video_id,'videoId',video_id,'title',title_text,'channel',channel_text,'duration',duration_text,
     'thumbnail',CASE WHEN thumbnail_text LIKE 'https://i.ytimg.com/vi/'||video_id||'/%' THEN thumbnail_text ELSE 'https://i.ytimg.com/vi/'||video_id||'/mqdefault.jpg' END,
-    'hue',CASE WHEN p_track->>'hue' ~ '^[0-9]{1,3});
-  INSERT INTO public.queue_entries(party_id,track,requested_by) VALUES(p.id,canonical,COALESCE(NULLIF(left(trim(p_nickname),20),''),'Convidado')) RETURNING id INTO result;
-  RETURN result;
-END $$;
-REVOKE ALL ON FUNCTION public.add_party_request(text,jsonb,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.add_party_request(text,jsonb,text) TO anon,authenticated,service_role;
- AND (p_track->>'hue')::integer BETWEEN 0 AND 359 THEN (p_track->>'hue')::integer ELSE 210 END);
+    'hue',CASE WHEN p_track->>'hue' ~ '^[0-9]{1,3}$' THEN LEAST((p_track->>'hue')::integer,359) ELSE 210 END);
   INSERT INTO public.queue_entries(party_id,track,requested_by) VALUES(p.id,canonical,COALESCE(NULLIF(left(trim(p_nickname),20),''),'Convidado')) RETURNING id INTO result;
   RETURN result;
 END $$;

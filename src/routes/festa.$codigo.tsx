@@ -53,6 +53,16 @@ function Guest() {
   const current = party ? queueItems(party, 'current')[0] : undefined;
   const queue = party ? queueItems(party, 'queued') : [];
   const isHost = host.data === true;
+  useEffect(() => {
+    const id = current?.videoId ?? current?.id;
+    if (!id) return;
+    try {
+      const key = 'festa:' + codigo + ':recent-tracks';
+      const previous = JSON.parse(window.localStorage.getItem(key) ?? '[]') as string[];
+      window.localStorage.setItem(key, JSON.stringify([...new Set([id, ...previous])].slice(0, 30)));
+    } catch { /* storage may be unavailable */ }
+  }, [codigo, current?.videoId, current?.id]);
+
   const searchError = results.error instanceof Error ? results.error.message : '';
 
   async function control(action: string, value?: number) {
@@ -96,6 +106,12 @@ function Guest() {
         return;
       }
       const chosen = candidates[Math.floor(Math.random() * Math.min(candidates.length, 6))] ?? candidates[0];
+      const latestParty = cache.getQueryData<import('@/lib/party-data').PartySnapshot | null>(['party', codigo]);
+      if (latestParty && queueItems(latestParty, 'queued').length > 0) {
+        setAutoMessage('Um pedido manual chegou; ele terá prioridade.');
+        await control('skip');
+        return;
+      }
       const result = await supabase.rpc('add_party_request', { p_code: codigo, p_track: chosen as unknown as import('@/integrations/supabase/types').Json, p_nickname: 'DJ automático' });
       if (result.error) throw result.error;
       await cache.invalidateQueries({ queryKey: ['party', codigo] });

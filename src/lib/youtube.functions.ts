@@ -24,7 +24,7 @@ async function fetchYouTube(url: URL, stage: 'search' | 'details'): Promise<Resp
       if (response.ok) return response;
 
       // Only retry temporary failures. A 403 usually means an API key, restriction, or quota issue.
-      if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) {
+      if (![500, 502, 503, 504].includes(response.status) || attempt === 2) {
         let reason = '';
         try {
           const body = (await response.clone().json()) as YouTubeApiError;

@@ -4,7 +4,9 @@ export type Track = {
   title: string;
   channel: string;
   duration: string;
-  hue: number;\n  videoId?: string;\n  thumbnail?: string;
+  hue: number;
+  videoId?: string;
+  thumbnail?: string;
 };
 
 export type QueueItem = Track & {

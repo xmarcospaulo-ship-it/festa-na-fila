@@ -67,7 +67,13 @@ BEGIN
   IF video_id !~ '^[A-Za-z0-9_-]{11}$' OR char_length(title_text) NOT BETWEEN 1 AND 120 OR char_length(channel_text) NOT BETWEEN 1 AND 120 OR char_length(duration_text)>12 THEN RAISE EXCEPTION 'Música inválida'; END IF;
   canonical:=jsonb_build_object('id',video_id,'videoId',video_id,'title',title_text,'channel',channel_text,'duration',duration_text,
     'thumbnail',CASE WHEN thumbnail_text LIKE 'https://i.ytimg.com/vi/'||video_id||'/%' THEN thumbnail_text ELSE 'https://i.ytimg.com/vi/'||video_id||'/mqdefault.jpg' END,
-    'hue',COALESCE(NULLIF(p_track->>'hue','')::integer,210));
+    'hue',CASE WHEN p_track->>'hue' ~ '^[0-9]{1,3});
+  INSERT INTO public.queue_entries(party_id,track,requested_by) VALUES(p.id,canonical,COALESCE(NULLIF(left(trim(p_nickname),20),''),'Convidado')) RETURNING id INTO result;
+  RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.add_party_request(text,jsonb,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.add_party_request(text,jsonb,text) TO anon,authenticated,service_role;
+ AND (p_track->>'hue')::integer BETWEEN 0 AND 359 THEN (p_track->>'hue')::integer ELSE 210 END);
   INSERT INTO public.queue_entries(party_id,track,requested_by) VALUES(p.id,canonical,COALESCE(NULLIF(left(trim(p_nickname),20),''),'Convidado')) RETURNING id INTO result;
   RETURN result;
 END $$;

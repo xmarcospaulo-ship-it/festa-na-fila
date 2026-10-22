@@ -46,6 +46,8 @@ export type Database = {
           id?: string
           name?: string
           playing?: boolean
+          playback_position_seconds?: number
+          player_updated_at?: string
           status?: string
           volume?: number
         }

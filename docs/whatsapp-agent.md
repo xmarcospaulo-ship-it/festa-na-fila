@@ -10,29 +10,42 @@
 
 ## Estado deste branch
 
-Este branch contém os helpers sem API para:
-- criar uma URL pública de pesquisa do YouTube;
-- extrair IDs de links oficiais comuns do YouTube;
-- converter um ID validado para o formato `Track` já usado pela fila;
-- testes unitários dessas regras.
+Implementado até agora:
+- Helpers para criar uma URL pública de pesquisa do YouTube sem consumir a cota de pesquisa da API.
+- Validação de links oficiais comuns e extração do ID do vídeo.
+- Conversão de um ID validado para o formato `Track` usado pela fila.
+- Testes unitários para os helpers.
+- Endpoint de webhook em `/api/whatsapp`:
+  - GET: verifica o token e devolve o desafio solicitado pela Meta.
+  - POST: exige assinatura `X-Hub-Signature-256` válida, valida o JSON e confirma o recebimento.
+  - Logs não incluem conteúdo das mensagens nem números de telefone.
 
-A integração com a WhatsApp Cloud API ainda não está ativa. Não há webhook, envio/recebimento real de mensagens nem associação persistente entre número de telefone e festa neste primeiro commit.
+**Ainda não é um agente pronto para convidados.** O webhook recebe e valida notificações, mas ainda não envia respostas, não guarda o estado da conversa, não associa telefone à festa e não adiciona músicas à fila. Os testes/build ainda precisam ser executados em CI.
 
-## Próximos passos para ativar o agente
+## Configuração do webhook na Meta
 
-1. Criar um app Meta e configurar a WhatsApp Cloud API e o webhook HTTPS.
-2. Implementar a verificação GET do webhook e validar a assinatura das notificações POST.
-3. Persistir o estado da conversa e associar o número do convidado ao código da festa, sem confiar em códigos arbitrários enviados por terceiros.
-4. Enviar mensagens pela API oficial usando token e Phone Number ID guardados exclusivamente como segredos do servidor.
-5. Adicionar idempotência para não processar o mesmo webhook mais de uma vez, além de limites anti-spam.
-6. Conectar a inclusão à função SQL pública `add_party_request`, verificando o formato real da RPC e as regras de segurança do banco.
-7. Configurar as mensagens de teste da Meta e validar build, testes e o fluxo ponta a ponta.
+Configure a URL HTTPS pública:
+`https://SEU-DOMINIO/api/whatsapp`
 
-## Variáveis esperadas na integração futura
+Use `WHATSAPP_VERIFY_TOKEN` como o token de verificação definido por você no servidor e informe o mesmo valor no painel da Meta. Assine o campo de webhook `messages` na configuração do produto WhatsApp.
 
-- `WHATSAPP_VERIFY_TOKEN`: segredo escolhido para a verificação do webhook.
-- `WHATSAPP_ACCESS_TOKEN`: token de acesso da Meta, apenas no servidor.
-- `WHATSAPP_PHONE_NUMBER_ID`: ID do número remetente registrado na Cloud API.
-- `WHATSAPP_APP_SECRET`: segredo do app Meta, usado para verificar a assinatura do webhook.
+O GET retorna o valor `hub.challenge` somente quando o modo é `subscribe` e o token coincide. O POST valida HMAC-SHA256 sobre o corpo bruto usando o segredo do app Meta. Sem `WHATSAPP_APP_SECRET`, o endpoint recusa POSTs; essa falha fechada é intencional.
 
-Não colocar esses valores no código, no frontend, nem em commits do Git. A disponibilidade de um número de teste não significa que o agente já está pronto para receber mensagens públicas.
+## Variáveis de ambiente do servidor
+
+- `WHATSAPP_VERIFY_TOKEN`: segredo aleatório escolhido para a verificação GET.
+- `WHATSAPP_APP_SECRET`: segredo do app Meta usado para verificar a assinatura dos POSTs.
+- `WHATSAPP_ACCESS_TOKEN`: token de acesso da Meta para enviar mensagens (ainda não utilizado).
+- `WHATSAPP_PHONE_NUMBER_ID`: ID do número remetente da Cloud API (ainda não utilizado).
+
+Não coloque esses valores no código, no frontend, nem em commits do Git. Não use o token temporário da Meta como configuração permanente de produção.
+
+## Próximos passos
+
+1. Testar build e testes em CI e ajustar o endpoint conforme o runtime de deploy.
+2. Configurar app Meta, webhook HTTPS, token de verificação, segredo do app e assinatura de `messages`.
+3. Implementar envio de mensagens pela Cloud API.
+4. Persistir o estado da conversa e associar com segurança o telefone ao código da festa.
+5. Adicionar idempotência para evitar processar o mesmo webhook mais de uma vez e limites anti-spam.
+6. Integrar à RPC `add_party_request` depois de conferir o formato e as regras de segurança do banco.
+7. Testar o fluxo completo com o número de teste da Meta antes de liberar para convidados.
